@@ -1,6 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct Event {
     pub id: i32,
+    // TODO : generics please
     pub task_name: String,
     pub epoch: i32,
     pub priority: i32,

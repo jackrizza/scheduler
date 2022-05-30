@@ -14,15 +14,35 @@ impl Scheduler {
         }
     }
 
-    pub fn lookup(&mut self, id: i32) -> usize {
+    pub fn lookup(&self, id: i32) -> usize {
         self.oplog
             .iter()
             .position(|x| x.id == id.clone())
             .unwrap()
             .clone()
     }
+
     pub fn inc_epoch(&mut self) {
         self.epoch += 1;
+    }
+
+    pub fn reprioritize(&mut self) {
+        let oplog = self.oplog.clone();
+        for mut event in oplog {
+            match ((self.epoch - event.epoch) as f32 / 100.00).floor() as i32 {
+                0 => event.priority = 0,
+                1..=3 => {
+                    if event.priority > 0 {
+                        event.priority -= 1;
+                    } else {
+                        event.priority = 0;
+                    }
+                }
+                _ => {
+                    event.priority = 0;
+                }
+            };
+        };
     }
 
     pub fn firstchild(&mut self) {

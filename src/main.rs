@@ -1,7 +1,7 @@
 mod taskhandler;
 
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{thread, time};
 
 fn main() {
     let frame = Arc::new(Mutex::new(taskhandler::scheduler::Scheduler::new()));
@@ -18,18 +18,17 @@ fn main() {
         ))
     }
 
-    let executer = thread::spawn(move || {
-        loop {
-            let mut f = frame.lock().unwrap();
-            if f.oplen() == 0 {
-                break;
-            } // clean exit
-
+    let executer = thread::spawn(move || loop {
+        let mut f = frame.lock().unwrap();
+        if f.oplen() == 0 {
+            println!("Sleeping executer...");
+            thread::sleep(time::Duration::from_millis(1000));
+        } else {
             println!("test {} : {:?} \n", f.epoch, f.oplog);
             f.firstchild();
-
-            f.inc_epoch();
         }
+
+        f.inc_epoch();
     });
 
     executer.join().unwrap();
