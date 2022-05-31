@@ -29,7 +29,7 @@ impl Scheduler {
     pub fn reprioritize(&mut self) {
         let oplog = self.oplog.clone();
         for mut event in oplog {
-            match ((self.epoch - event.epoch) as f32 / 100.00).floor() as i32 {
+            match ((self.epoch - event.epoch) as f32 / 10.00).floor() as i32 {
                 0 => event.priority = 0,
                 1..=3 => {
                     if event.priority > 0 {
@@ -42,7 +42,25 @@ impl Scheduler {
                     event.priority = 0;
                 }
             };
-        };
+        }
+    }
+
+    pub fn restructure(&mut self) {
+        println!("Start Restructuring...");
+        for j in 0..self.oplen() {
+            let prime_index = self.lookup(j);
+            let mut secondary_index = 0 as usize;
+            for k in 0..self.oplen() {
+                let index = self.lookup(k);
+                if self.oplog[prime_index].priority < self.oplog[index].priority && index != prime_index {
+                    secondary_index = index;
+                }
+            }
+            println!("swaping {} : {}", prime_index, secondary_index);
+            let mut oplog = self.oplog.clone();
+            oplog.swap(prime_index, secondary_index);
+        }
+        println!("\nEnd Restructuring...");
     }
 
     pub fn firstchild(&mut self) {
