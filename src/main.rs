@@ -1,11 +1,12 @@
 mod taskhandler;
 
-use std::sync::{mpsc, Arc, Mutex};
-use std::{thread, time};
-use rand::Rng; // 0.8.0
+use rand::Rng;
+use std::sync::{Arc, Mutex};
+use std::{thread, time}; // 0.8.0
 
 fn main() {
     let frame = Arc::new(Mutex::new(taskhandler::scheduler::Scheduler::new()));
+    let mut test_killer = 0;
 
     // test set
     for i in 1..40 {
@@ -19,15 +20,26 @@ fn main() {
         ))
     }
     loop {
+        // kill runaway in debug
+        if cfg!(debug_assertions) {
+            if test_killer > 199 {
+                break;
+            }
+            test_killer += 1;
+        }
+
         let f = frame.clone();
-        {
+        let cleaner = thread::spawn(move || {
             let mut f = f.lock().unwrap();
-            if f.epoch % 10 == 0 {
+            // if f.epoch % 10 == 0 {
                 println!("Cleaner...");
                 f.reprioritize();
-                // f.restructure();
-            }
-        };
+            // }
+
+            f.inc_epoch();
+        });
+
+        cleaner.join().unwrap();
 
         let f = frame.clone();
         let executer = thread::spawn(move || {
@@ -36,13 +48,19 @@ fn main() {
                 println!("Sleeping executer... (EPOCH : {})", f.epoch);
                 thread::sleep(time::Duration::from_millis(1000));
             } else {
-                println!("test {} : {:?} \n", f.epoch, f.oplog);
-                f.firstchild();
+                for event in &f.oplog {
+                    println!("Priority {}, Event {:?} \n", event.priority, event);
+                }
+                // f.firstchild();
             }
 
             f.inc_epoch();
         });
 
         executer.join().unwrap();
+        
+        println!("End of loop... \n\n\n\n");
+        
+        // let _ = time::Duration::from_millis(500);
     }
 }
