@@ -2,7 +2,7 @@ mod taskhandler;
 
 use rand::Rng;
 use std::sync::{Arc, Mutex};
-use std::{thread, time}; // 0.8.0
+use std::{thread, time};
 
 fn main() {
     let frame = Arc::new(Mutex::new(taskhandler::scheduler::Scheduler::new()));
@@ -31,10 +31,10 @@ fn main() {
         let f = frame.clone();
         let cleaner = thread::spawn(move || {
             let mut f = f.lock().unwrap();
-            // if f.epoch % 10 == 0 {
+            if f.epoch % 10 == 0 {
                 println!("Cleaner...");
                 f.reprioritize();
-            // }
+            }
 
             f.inc_epoch();
         });
