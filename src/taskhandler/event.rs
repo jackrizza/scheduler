@@ -21,20 +21,18 @@ impl<T> Event<T> {
     }
 
     pub fn togglex(&mut self) {
-        if self.executed {
-            self.executed = false;
-        } else {
-            self.executed = true;
-        }
+        self.executed = !self.executed;
     }
 
     pub fn execute(&mut self) {
-        if self.executed != true {
-            //do stuff
-            //mark as executed
-            self.togglex();
+        if self.executed == true {
+            return
         }
-    }
+        // do stuff
+
+        // mark as executed
+        self.togglex()
+    }    
 }
 
 #[cfg(test)]
@@ -50,10 +48,8 @@ mod traits {
 
     #[test]
     fn toggle_excuted() {
-        let event = Arc::new(Mutex::new(Event::new(1, "hello".to_string(), 1, 0, false)));
-        let e = event.clone();
-        let mut e = e.lock().unwrap();
-        let _ = e.togglex();
-        assert_eq!(e.executed, true);
+        let mut event = Event::new(1, "hello".to_string(), 1, 0, false);
+        event.execute();
+        assert_eq!(event.executed, true);
     }
 }

@@ -1,8 +1,9 @@
-mod taskhandler;
-
 use rand::Rng;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
+
+mod taskhandler;
+mod threads;
 
 fn main() {
     let frame = Arc::new(Mutex::new(taskhandler::scheduler::Scheduler::new()));
@@ -29,38 +30,11 @@ fn main() {
         }
 
         let f = frame.clone();
-        let cleaner = thread::spawn(move || {
-            let mut f = f.lock().unwrap();
-            if f.epoch % 10 == 0 {
-                println!("Cleaner...");
-                f.reprioritize();
-            }
-
-            f.inc_epoch();
-        });
-
+        let cleaner = threads::cleaner::cleaner(f);
         cleaner.join().unwrap();
 
         let f = frame.clone();
-        let executer = thread::spawn(move || {
-            let mut f = f.lock().unwrap();
-            if f.oplen() == 0 {
-                println!("Sleeping executer... (EPOCH : {})", f.epoch);
-                thread::sleep(time::Duration::from_millis(1000));
-            } else {
-                for event in &f.oplog {
-                    println!("Priority {}, Event {:?} \n", event.priority, event);
-                }
-                // f.firstchild();
-            }
-
-            f.inc_epoch();
-        });
-
+        let executer = threads::executer::executer(f);
         executer.join().unwrap();
-        
-        println!("End of loop... \n\n\n\n");
-        
-        // let _ = time::Duration::from_millis(500);
     }
 }
